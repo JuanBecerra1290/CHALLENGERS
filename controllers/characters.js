@@ -5,20 +5,21 @@ const {Character, Movie} = require('../models/index')
 const { createJWT } = require('../helpers/create-jwt');
 const { uploadImg } = require('../helpers/upload-img');
 const { deleteImg } = require('../helpers/delete-img');
+const extensionValidation = require('../helpers/extension-validation');
 
 const characterList = async (req, res) =>{
-    const { name, age, weight, movie } = req.query
+    const { name='', age='', weight='', movie='' } = req.query
 
-    if(!name){
+    if(name === ''){
         return res.status(400).json({
             status: 'error',
             result: 'Error se requiere el nombre para realizar la busqueda del personaje'
         })
     }
-    
+
     try {
         const whereCondition = {
-            attributes: ['img', 'name'],
+            attributes: ['id', 'img', 'name'],
             where: {
                 [Op.and]:[
                     {name: {[Op.substring]: name.toUpperCase()}}
@@ -26,7 +27,7 @@ const characterList = async (req, res) =>{
             }
         }
 
-        if(age && weight){
+        if(age !== '' && weight !== ''){
             whereCondition.where = {
                 [Op.and]:[
                     {name: {[Op.substring]: name.toUpperCase()}},
@@ -34,14 +35,14 @@ const characterList = async (req, res) =>{
                     {weight}
                 ]
             }
-        }else if(age){
+        }else if(age !== ''){
             whereCondition.where = {
                 [Op.and]:[
                     {name: {[Op.substring]: name.toUpperCase()}},
                     {age}
                 ]
             }
-        }else if(weight){
+        }else if(weight !== ''){
             whereCondition.where = {
                 [Op.and]:[
                     {name: {[Op.substring]: name.toUpperCase()}},
@@ -49,7 +50,7 @@ const characterList = async (req, res) =>{
                 ]
             }
         }
-        if(movie){
+        if(movie !== ''){
             whereCondition.include = {
                 model: Movie,
                 attributes: [],
@@ -58,8 +59,6 @@ const characterList = async (req, res) =>{
                 }
             }
         }
-        
-        console.log(whereCondition);
 
         const characters = await Character.findAll(whereCondition)
 
@@ -138,6 +137,15 @@ const characterAdd = async (req, res) => {
             })
         }
         
+        const extValid = extensionValidation(req.files)
+        console.log(extValid);
+        if( extValid.status ){
+            return res.status(400).json({
+                status: 'error',
+                result: `La extensión '${extValid.extension}' no es valida, solo se permiten las sigientes extensiones: ${extValid.validExtensions}`
+            })
+        }
+
         //Directorio de alojamiento raiz.
         const directory = 'character/';
         //Sube imagen y devuelve el path
@@ -180,28 +188,37 @@ const characterUpdate = async ( req, res ) => {
     const idCharacter = req.params.id
 
     //Prevencion en caso de que el usuario envie el id.
-    const { id, ...data } = req.body;
+    const { name = '', age = '', weight = '', history = '', movies = '' } = req.body;
 
-    //comprobar que no hay datos vacios
-    if((data.hasOwnProperty('name') && data.name === '') || (data.hasOwnProperty('age') && data.age === '') || (data.hasOwnProperty('weight') && data.weight === '') || (data.hasOwnProperty('history') && data.history === '') || (data.hasOwnProperty('img') && data.img === '') || (data.hasOwnProperty('movies') && data.movies === '')){
-        return res.status(400).json({
-            status: 'error',
-            result:'No se permite enviar caracteres en blanco.'
-        })
-    }
+    const data = {}
 
-    if(data.hasOwnProperty('name') && data.name !== ''){
-        data.name = data.name.toUpperCase();
+    if( name !== '' ){
+        const nameCap = name.toUpperCase();
+        data.name = nameCap;
     }
-    if(data.hasOwnProperty('age') && data.age !== ''){
-        data.age = Number.parseInt(data.age);
+    if( age !== '' ){
+        const ageCap = Number.parseInt(age);
+        data.age = ageCap;
     }
-    if(data.hasOwnProperty('weight') && data.weight !== ''){
-        data.weight = Number.parseInt(data.weight);
+    if( weight !== '' ){
+        const weightCap = Number.parseInt(weight);
+        data.weight = weightCap
+    }
+    if( history !== '' ){
+        data.history = history
     }
     
     try {
-        if( req.files && Object.keys(req.files).length !== 0 && req.files.img ){
+        if( req.files && Object.keys(req.files).length !== 0 && req.files.img && req.files.img !== ''){
+            //Valida que la extension del archivo sea permitido
+            const extValid = extensionValidation(req.files)
+            
+            if( extValid.status ){
+                return res.status(400).json({
+                    status: 'error',
+                    result: `La extensión ${extension} no es valida, solo se permiten: ${extValid.validExtensions}`
+                })
+            }
             //Directorio de alojamiento raiz.
             const directory = 'character/';
             //Elimina las Imagenes previas del personaje
@@ -217,8 +234,8 @@ const characterUpdate = async ( req, res ) => {
     
         character.set( data )
 
-        if( data.hasOwnProperty('movies') && data.movies !== '' ){
-            const idMovies = data.movies.split(',')
+        if(movies !== '' ){
+            const idMovies = movies.split(',')
 
             const movies = await Movie.findAll({
                 where: { id: idMovies }
@@ -231,7 +248,7 @@ const characterUpdate = async ( req, res ) => {
         const token = await createJWT( req.userAuth.id );
 
         res.json({
-            status: 'Personaje actualizado correctamente',
+            status: 'ok',
             result: character,
             token
         })

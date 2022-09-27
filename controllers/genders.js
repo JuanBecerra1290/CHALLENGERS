@@ -39,6 +39,16 @@ const genderAdd = async ( req, res ) => {
                 result: 'El genero ya existe.'
             })
         }
+
+        //Valida extension de imagen
+        const extValid = extensionValidation(req.files)
+            
+        if( extValid.status ){
+            return res.status(400).json({
+                status: 'error',
+                result: `La extensión '${extValid.extension}' no es valida, solo se permiten las sigientes extensiones: ${extValid.validExtensions}`
+            })
+        }
         
         //Directorio de alojamiento raiz.
         const directory = 'gender/';
@@ -69,7 +79,7 @@ const genderAdd = async ( req, res ) => {
         console.log(err)
         res.status(500).json({
             status: 'error',
-            result:'Error del servidor al crear personaje, por favor comunicarse con el administrador'
+            result: 'Error en el servidor, contactarse con soporte.'
         })
     }
 }
@@ -78,22 +88,27 @@ const genderUpdate = async ( req, res ) => {
     const idGender = req.params.id
 
     //Prevencion en caso de que el usuario envie el id.
-    const { id, ...data } = req.body;
+    const { name, movies } = req.body;
 
-    //comprobar que no hay datos vacios
-    if((data.hasOwnProperty('name') && data.name === '') || (data.hasOwnProperty('img') && data.img === '')){
-        return res.status(400).json({
-            status: 'error',
-            result:'No se permite enviar caracteres en blanco.'
-        })
-    }
+    const data = {};
 
-    if(data.hasOwnProperty('name') && data.name !== ''){
-        data.name = data.name.toUpperCase();
+    if( name !== '' ){
+        const nameCap = name.toUpperCase();
+        data.name = nameCap;
     }
     
     try {
-        if( req.files && Object.keys(req.files).length !== 0 && req.files.img ){
+        if( req.files && Object.keys(req.files).length !== 0 && req.files.img && req.files.img !== '' ){
+            //Valida extension de imagen
+            const extValid = extensionValidation(req.files)
+                
+            if( extValid.status ){
+                return res.status(400).json({
+                    status: 'error',
+                    result: `La extensión '${extValid.extension}' no es valida, solo se permiten las sigientes extensiones: ${extValid.validExtensions}`
+                })
+            }
+
             //Directorio de alojamiento raiz.
             const directory = 'gender/';
             //Elimina las Imagenes previas del personaje
@@ -110,18 +125,18 @@ const genderUpdate = async ( req, res ) => {
         gender.set( data )
 
         //Añade personajes asociados
-        if( data.hasOwnProperty('movies') && data.movies !== '' ){
-            const idMovies = data.movies.split(',')
-            const movies = await Movie.findAll({
+        if( movies !== '' ){
+            const idMovies = movies.split(',')
+            const moviesArr = await Movie.findAll({
                 where: { id: idMovies }
             })
-            gender.addMovies(movies);
+            gender.addMovies(moviesArr);
         };
 
         await gender.save();
 
         res.json({
-            status: 'Personaje actualizado correctamente',
+            status: 'ok',
             result: gender
         })
 
@@ -129,7 +144,7 @@ const genderUpdate = async ( req, res ) => {
         console.log(err)
         res.status(500).json({
             status: 'error',
-            result:'Error del servidor al actualizar personaje, por favor comunicarse con el administrador'
+            result: 'Error en el servidor, contactarse con soporte.'
         })
     }
 }
@@ -155,7 +170,7 @@ const genderDelete = async ( req, res ) => {
         console.log(err)
         res.status(500).json({
             status: 'error',
-            result:'Error del servidor al crear personaje, por favor comunicarse con el administrador'
+            result: 'Error en el servidor, contactarse con soporte.'
         })
     }
 }

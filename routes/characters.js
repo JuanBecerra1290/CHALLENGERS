@@ -31,8 +31,8 @@ router.post('/', [
     validateJWT,
     validateImg,
     check('name', 'El nombre es obligatorio').not().isEmpty(),
-    check('age', 'La edad es obligatoria').not().isEmpty(),
-    check('weight', 'El peso es obligatorio').not().isEmpty(),
+    check('age', 'La edad es obligatoria, debe ser de tipo number').isNumeric(),
+    check('weight', 'El peso es obligatorio, debe ser de tipo number').isNumeric(),
     check('history', 'la historia es obligatoria').not().isEmpty(),
     validateInputs
 ], characterAdd)

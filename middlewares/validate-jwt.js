@@ -7,8 +7,8 @@ const validateJWT = async ( req, res, next ) => {
 
     if( !token ) {
         return res.status(401).json({
-            status: 'err',
-            result: 'El token no existe'
+            status: 'error',
+            result: 'Es necesario token de validacion de usuario'
         });
     }
     
@@ -22,7 +22,7 @@ const validateJWT = async ( req, res, next ) => {
         if( !userAuth ) {
             return res.status(401).json({
                 status: 'error',
-                result: 'Usuario no valido - no existe en BD'
+                result: 'Usuario no valido.'
             })
         }
 

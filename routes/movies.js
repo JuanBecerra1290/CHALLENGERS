@@ -31,8 +31,8 @@ router.post('/', [
     validateJWT,
     validateImg,
     check('title', 'El titulo es obligatorio').not().isEmpty(),
-    check('createDate', 'La fecha de estreno es obligatoria').not().isEmpty(),
-    check('ratings', 'La Calificación es obligatoria').not().isEmpty(),
+    check('createDate', 'La fecha de estreno es obligatoria, debe ser tipo text formato "AAAA/MM/DD"').not().isEmpty(),
+    check('ratings', 'La Calificación es obligatoria, debe ser de tipo number').isNumeric(),
     validateInputs
 ], movieAdd)
 

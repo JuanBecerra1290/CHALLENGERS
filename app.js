@@ -31,7 +31,7 @@ app.listen(port, async () =>{
     console.log(`El servidor esta funcionando en el puerto: ${port}`)
     //Conecta a base de datos
     try {
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({ alter: true });   
         console.log('Base de datos conectada.');
     } catch (error) {
         console.error('Error al conectar la base de datos:', error);
